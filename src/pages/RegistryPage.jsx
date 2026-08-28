@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
   Chip,
   Container,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -11,6 +12,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -28,6 +30,26 @@ const features = tableFeatures({
 
 function RegistryPage({ tracks }) {
   const [selectedTrack, setSelectedTrack] = useState(null);
+  const [activeTrack, setActiveTrack] = useState(null);
+
+  const [genreFilter, setGenreFilter] = useState('All');
+  const [roleFilter, setRoleFilter] = useState('All');
+
+  useEffect(() => {
+    setActiveTrack(selectedTrack);
+  }, [selectedTrack]);
+
+  const filteredTracks = useMemo(() => {
+    return tracks.filter((track) => {
+      const matchesGenre =
+        genreFilter === 'All' || track.genre === genreFilter;
+
+      const matchesRole =
+        roleFilter === 'All' || track.role === roleFilter;
+
+      return matchesGenre && matchesRole;
+    });
+  }, [tracks, genreFilter, roleFilter]);
 
   const columns = useMemo(
     () => [
@@ -54,6 +76,7 @@ function RegistryPage({ tracks }) {
       {
         accessorKey: 'role',
         header: 'Role',
+
         cell: (info) => {
           const role = info.getValue();
 
@@ -66,10 +89,12 @@ function RegistryPage({ tracks }) {
                   role === 'Creator'
                     ? 'rgba(30, 215, 96, 0.15)'
                     : '#282828',
+
                 color:
                   role === 'Creator'
                     ? '#1ed760'
                     : '#ffffff',
+
                 fontWeight: 700,
               }}
             />
@@ -83,7 +108,7 @@ function RegistryPage({ tracks }) {
   const table = useTable({
     features,
     columns,
-    data: tracks,
+    data: filteredTracks,
 
     initialState: {
       pagination: {
@@ -92,6 +117,54 @@ function RegistryPage({ tracks }) {
       },
     },
   });
+
+  const handleGenreFilter = (event) => {
+    setGenreFilter(event.target.value);
+    setSelectedTrack(null);
+    setActiveTrack(null);
+    table.setPageIndex(0);
+  };
+
+  const handleRoleFilter = (event) => {
+    setRoleFilter(event.target.value);
+    setSelectedTrack(null);
+    setActiveTrack(null);
+    table.setPageIndex(0);
+  };
+
+  const filterStyles = {
+    minWidth: 150,
+
+    '& .MuiOutlinedInput-root': {
+      color: '#ffffff',
+      bgcolor: '#242424',
+      borderRadius: '8px',
+
+      '& fieldset': {
+        borderColor: '#3e3e3e',
+      },
+
+      '&:hover fieldset': {
+        borderColor: '#b3b3b3',
+      },
+
+      '&.Mui-focused fieldset': {
+        borderColor: '#1ed760',
+      },
+    },
+
+    '& .MuiInputLabel-root': {
+      color: '#b3b3b3',
+    },
+
+    '& .MuiInputLabel-root.Mui-focused': {
+      color: '#1ed760',
+    },
+
+    '& .MuiSvgIcon-root': {
+      color: '#ffffff',
+    },
+  };
 
   return (
     <Box
@@ -103,30 +176,105 @@ function RegistryPage({ tracks }) {
       }}
     >
       <Container maxWidth="lg">
-        <Box sx={{ mb: 2.5 }}>
-          <Typography
-            component="h1"
-            fontWeight={900}
-            sx={{
-              fontSize: {
-                xs: '1.8rem',
-                md: '2.2rem',
-              },
-              color: '#ffffff',
-            }}
-          >
-            Track Registry
-          </Typography>
+        <Box
+          sx={{
+            mb: 2.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: {
+              xs: 'flex-start',
+              md: 'center',
+            },
+            flexDirection: {
+              xs: 'column',
+              md: 'row',
+            },
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography
+              component="h1"
+              fontWeight={900}
+              sx={{
+                fontSize: {
+                  xs: '1.8rem',
+                  md: '2.2rem',
+                },
+                color: '#ffffff',
+              }}
+            >
+              Track Registry
+            </Typography>
 
-          <Typography
+            <Typography
+              sx={{
+                color: '#b3b3b3',
+                mt: 0.4,
+                fontSize: '0.88rem',
+              }}
+            >
+              Browse, filter, and select registered tracks.
+            </Typography>
+          </Box>
+
+          <Box
             sx={{
-              color: '#b3b3b3',
-              mt: 0.4,
-              fontSize: '0.88rem',
+              display: 'flex',
+              gap: 1.5,
+              flexWrap: 'wrap',
             }}
           >
-            Browse and select registered tracks.
-          </Typography>
+            <TextField
+              select
+              size="small"
+              label="Genre"
+              value={genreFilter}
+              onChange={handleGenreFilter}
+              sx={filterStyles}
+            >
+              <MenuItem value="All">
+                All Genres
+              </MenuItem>
+
+              <MenuItem value="Pop">
+                Pop
+              </MenuItem>
+
+              <MenuItem value="Rock">
+                Rock
+              </MenuItem>
+
+              <MenuItem value="Indie">
+                Indie
+              </MenuItem>
+
+              <MenuItem value="Jazz">
+                Jazz
+              </MenuItem>
+            </TextField>
+
+            <TextField
+              select
+              size="small"
+              label="Role"
+              value={roleFilter}
+              onChange={handleRoleFilter}
+              sx={filterStyles}
+            >
+              <MenuItem value="All">
+                All Roles
+              </MenuItem>
+
+              <MenuItem value="Creator">
+                Creator
+              </MenuItem>
+
+              <MenuItem value="Listener">
+                Listener
+              </MenuItem>
+            </TextField>
+          </Box>
         </Box>
 
         <Paper
@@ -164,8 +312,8 @@ function RegistryPage({ tracks }) {
                 fontSize: '0.82rem',
               }}
             >
-              {tracks.length} track
-              {tracks.length !== 1 ? 's' : ''}
+              {filteredTracks.length} track
+              {filteredTracks.length !== 1 ? 's' : ''}
             </Typography>
           </Box>
 
@@ -240,7 +388,7 @@ function RegistryPage({ tracks }) {
                   );
                 })}
 
-                {tracks.length === 0 && (
+                {filteredTracks.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
@@ -251,7 +399,7 @@ function RegistryPage({ tracks }) {
                         py: 6,
                       }}
                     >
-                      No tracks registered yet.
+                      No tracks match the selected filters.
                     </TableCell>
                   </TableRow>
                 )}
@@ -313,34 +461,167 @@ function RegistryPage({ tracks }) {
           </Box>
         </Paper>
 
-        {selectedTrack && (
-          <Box
+        {activeTrack && (
+          <Paper
+            elevation={0}
             sx={{
-              mt: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
+              mt: 2.5,
+              bgcolor: '#181818',
+              color: '#ffffff',
+              border: '1px solid #282828',
+              borderRadius: '12px',
+              p: {
+                xs: 2.5,
+                md: 3,
+              },
             }}
           >
-            <Typography
+            <Box
               sx={{
-                color: '#727272',
-                fontSize: '0.82rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: 2,
+                mb: 2.5,
               }}
             >
-              Active track:
-            </Typography>
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#1ed760',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    mb: 0.4,
+                  }}
+                >
+                  Active Track
+                </Typography>
 
-            <Typography
+                <Typography
+                  variant="h5"
+                  fontWeight={800}
+                >
+                  {activeTrack.trackTitle}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: '#b3b3b3',
+                    mt: 0.3,
+                  }}
+                >
+                  {activeTrack.artistName}
+                </Typography>
+              </Box>
+
+              <Chip
+                label={activeTrack.role}
+                size="small"
+                sx={{
+                  bgcolor:
+                    activeTrack.role === 'Creator'
+                      ? '#1ed760'
+                      : '#282828',
+
+                  color:
+                    activeTrack.role === 'Creator'
+                      ? '#000000'
+                      : '#ffffff',
+
+                  fontWeight: 800,
+                }}
+              />
+            </Box>
+
+            <Box
               sx={{
-                color: '#1ed760',
-                fontSize: '0.82rem',
-                fontWeight: 700,
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr 1fr',
+                  md: 'repeat(4, 1fr)',
+                },
+                gap: 2,
               }}
             >
-              {selectedTrack.trackTitle}
-            </Typography>
-          </Box>
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#727272',
+                    fontSize: '0.75rem',
+                    mb: 0.3,
+                  }}
+                >
+                  Genre
+                </Typography>
+
+                <Typography
+                  fontWeight={700}
+                  fontSize="0.9rem"
+                >
+                  {activeTrack.genre}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#727272',
+                    fontSize: '0.75rem',
+                    mb: 0.3,
+                  }}
+                >
+                  Rating / BPM
+                </Typography>
+
+                <Typography
+                  fontWeight={700}
+                  fontSize="0.9rem"
+                >
+                  {activeTrack.rating}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#727272',
+                    fontSize: '0.75rem',
+                    mb: 0.3,
+                  }}
+                >
+                  Record Label
+                </Typography>
+
+                <Typography
+                  fontWeight={700}
+                  fontSize="0.9rem"
+                >
+                  {activeTrack.recordLabel}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  sx={{
+                    color: '#727272',
+                    fontSize: '0.75rem',
+                    mb: 0.3,
+                  }}
+                >
+                  User Role
+                </Typography>
+
+                <Typography
+                  fontWeight={700}
+                  fontSize="0.9rem"
+                >
+                  {activeTrack.role}
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
         )}
       </Container>
     </Box>
